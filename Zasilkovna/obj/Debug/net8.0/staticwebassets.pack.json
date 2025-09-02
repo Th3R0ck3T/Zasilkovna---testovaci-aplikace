@@ -1,0 +1,37 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\arago\\source\\repos\\Zasilkovna\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\Zasilkovna.bundle.scp.css",
+      "PackagePath": "staticwebassets\\Zasilkovna.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\Users\\arago\\source\\repos\\Zasilkovna\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\Users\\arago\\source\\repos\\Zasilkovna\\wwwroot\\data\\branch.xml",
+      "PackagePath": "staticwebassets\\data\\branch.xml"
+    },
+    {
+      "Id": "C:\\Users\\arago\\source\\repos\\Zasilkovna\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Zasilkovna.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.Zasilkovna.props",
+      "PackagePath": "build\\Zasilkovna.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.Zasilkovna.props",
+      "PackagePath": "buildMultiTargeting\\Zasilkovna.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.Zasilkovna.props",
+      "PackagePath": "buildTransitive\\Zasilkovna.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

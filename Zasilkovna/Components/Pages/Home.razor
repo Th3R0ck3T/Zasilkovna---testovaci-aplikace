@@ -1,0 +1,165 @@
+﻿@page "/"
+@rendermode InteractiveServer 
+@inject HttpClient Http
+
+<div id="searchSite">
+    <h2>Vyhledávač poboček</h2>
+    <div id="search">
+        <input @bind="searchTerm" @onkeyup="@Enter" placeholder="Zadej město nebo název" />
+        <button @onclick="SearchBranches">Vyhledat</button>
+    </div>
+    
+
+    <!-- Seznam výsledků -->
+    @if (filteredBranches != null && filteredBranches.Any())
+    {
+        <ul>
+            @foreach (var branch in filteredBranches)
+            {
+                <li @onclick="() => SelectBranch(branch)" class="itemList">
+                    @branch.Name
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>Načítání poboček</p>
+    }
+</div>
+
+<!-- Detail vybrané pobočky -->
+@if (selectedBranch != null)
+{
+    <div id="detail">
+        <h4>@selectedBranch.Name</h4>
+        <p><b>Place:</b> @selectedBranch.Place</p>
+        <p><b>Street:</b> @selectedBranch.Street</p>
+        <p><b>City:</b> @selectedBranch.City, @selectedBranch.Zip</p>
+        <p><b>Country:</b> @selectedBranch.Country</p>
+        <p><b>Currency:</b> @selectedBranch.Currency</p>
+        <p><b>Latitude:</b> @selectedBranch.Latitude, <b>Longitude:</b> @selectedBranch.Longitude</p>
+        <p><b>URL:</b> <a href="@selectedBranch.Url" target="_blank">Visit Link</a></p>
+
+        <h4>Photos:</h4>
+        @if (selectedBranch.Photos != null)
+        {
+            <div class="photos"> 
+                @foreach (var photo in selectedBranch.Photos)
+                {
+                    <img src="@photo.Thumbnail" />
+                }
+            </div>
+        }
+
+        <h4>Opening Hours:</h4>
+        @if (selectedBranch.OpeningHours != null)
+        {
+            <ul>
+                <li>@((MarkupString)selectedBranch.OpeningHours.CompactShort)</li> <!-- MarkupString  - na stránce se zobrazí text ve správném formátu -->
+                <li><strong>Monday:</strong> @selectedBranch.OpeningHours.Monday</li>
+                <li><strong>Tuesday:</strong> @selectedBranch.OpeningHours.Tuesday</li>
+                <li><strong>Wednesday:</strong> @selectedBranch.OpeningHours.Wednesday</li>
+                <li><strong>Thursday:</strong> @selectedBranch.OpeningHours.Thursday</li>
+                <li><strong>Friday:</strong> @selectedBranch.OpeningHours.Friday</li>
+                <li><strong>Saturday:</strong> @selectedBranch.OpeningHours.Saturday</li>
+                <li><strong>Sunday:</strong> @selectedBranch.OpeningHours.Sunday</li>
+            </ul>
+        }
+    </div>
+}
+
+<!-- C# -->
+@code {
+    private string searchTerm = "";
+    private List<Branch> allBranches = new();
+    private List<Branch> filteredBranches = new();
+    private Branch? selectedBranch;
+
+    private void SelectBranch(Branch branch) => selectedBranch = branch;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // stažení z dokumentu
+        var xmlString = await Http.GetStringAsync("data/branch.xml");
+        var xmlDoc = new XmlDocument();
+        xmlDoc.LoadXml(xmlString);
+
+        var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
+        nsmgr.AddNamespace("b", "http://www.zasilkovna.cz/api/v4/branch");
+
+        var nodes = xmlDoc.SelectNodes("//b:branch", nsmgr);
+        // Prohledá jednotlivé elementy a ukládá do vlastností třídy
+        foreach (XmlNode node in nodes)
+        {
+            var branch = new Branch
+                {
+                    Name = node["name"]?.InnerText ?? "",
+                    Place = node["place"]?.InnerText ?? "",
+                    Street = node["street"]?.InnerText ?? "",
+                    City = node["city"]?.InnerText ?? "",
+                    Country = node["country"]?.InnerText ?? "",
+                    Currency = node["currency"]?.InnerText ?? "",
+                    Zip = node["zip"]?.InnerText ?? "",
+                    Url = node["url"]?.InnerText ?? "",
+                    Latitude = node["latitude"]?.InnerText ?? "",
+                    Longitude = node["longitude"]?.InnerText ?? "",
+                    Photos = new List<Photo>(),
+                    OpeningHours = new OpeningHours
+                    {
+                        CompactShort = node.SelectSingleNode("b:openingHours/b:compactShort", nsmgr)?.InnerText ?? "",
+                        CompactLong = node.SelectSingleNode("b:openingHours/b:compactLong", nsmgr)?.InnerText ?? "",
+                        Monday = node.SelectSingleNode("b:openingHours/b:regular/b:monday", nsmgr)?.InnerText ?? "",
+                        Tuesday = node.SelectSingleNode("b:openingHours/b:regular/b:tuesday", nsmgr)?.InnerText ?? "",
+                        Wednesday = node.SelectSingleNode("b:openingHours/b:regular/b:wednesday", nsmgr)?.InnerText ?? "",
+                        Thursday = node.SelectSingleNode("b:openingHours/b:regular/b:thursday", nsmgr)?.InnerText ?? "",
+                        Friday = node.SelectSingleNode("b:openingHours/b:regular/b:friday", nsmgr)?.InnerText ?? "",
+                        Saturday = node.SelectSingleNode("b:openingHours/b:regular/b:saturday", nsmgr)?.InnerText ?? "",
+                        Sunday = node.SelectSingleNode("b:openingHours/b:regular/b:sunday", nsmgr)?.InnerText ?? ""
+                    }
+                };
+
+            // Fotky
+            var photoNodes = node.SelectNodes("b:photos/b:photo", nsmgr);
+            if (photoNodes != null)
+            {
+                foreach (XmlNode p in photoNodes)
+                {
+                    branch.Photos.Add(new Photo
+                        {
+                            Thumbnail = p["thumbnail"]?.InnerText ?? "",
+                            Normal = p["normal"]?.InnerText ?? "" 
+                        });
+                }
+            }
+
+            allBranches.Add(branch);
+        }
+
+        filteredBranches = allBranches.Take(10).ToList(); // zobrazí se 10 poboček
+    }
+    // Vyhledávač
+    private void SearchBranches()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredBranches = allBranches.Take(10).ToList();
+        }
+        else
+        {
+            filteredBranches = allBranches
+                .Where(b => b.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                            b.City.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .Take(10) // Po vyhledání najde 10 poboček
+                .ToList();
+        }
+    }
+    // Zmáčknutí Enter a numpadEnter při vyhledávání
+    private void Enter(KeyboardEventArgs e)
+    {
+        if(e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            SearchBranches(); // zavolá metodu SearchBranches() po stisknutí Enteru
+        }
+    }
+}
